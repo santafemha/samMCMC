@@ -1,0 +1,11 @@
+bibentry("Manual",
+   title = "samMCMC: stub",
+   author = c(person("stub"),person("stub"),person("stub")),
+   organization = "",
+   address      = "",
+   year   = "2019",
+   note   = "R package version 1.0",
+   url    = "",
+
+   mheader = "To cite samMCMC in publications use:"
+)
