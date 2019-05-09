@@ -12,10 +12,15 @@ updateCov(X, covObj = NA)
 \item{covObj}{A list with the current covariance matrix, mean, and number of observations}
 }
 \value{
-covObj, a list with the updated covariance matrix, mean, and number of observations
+A list with the updated covariance matrix, mean, and number of observations that
+can be subsequently passed as the \code{covObj} of \code{updateCov}.
 }
 \description{
 Recursively update a covariance matrix (and mean) by adding new observations.
+}
+\references{
+Harrio, Saksman, and Tamminen (2001), An adaptive Metropolis algorithm, 
+in Bernoulli, Volume 7, Number 2, pages 223 through 242.
 }
 \author{
 Michael Holton Price <MichaelHoltonPrice@gmail.com>

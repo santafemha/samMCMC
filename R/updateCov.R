@@ -5,11 +5,15 @@
 #' @param X A new measurement
 #' @param covObj A list with the current covariance matrix, mean, and number of observations
 #'
-#' @return covObj, a list with the updated covariance matrix, mean, and number of observations
+#' @return A list with the updated covariance matrix, mean, and number of observations that
+#' can be subsequently passed as the \code{covObj} of \code{updateCov}.
 #'
-#' @author Michael Holton Price <MichaelHoltonPrice@gmail.com>
-
+#' @references Harrio, Saksman, and Tamminen (2001), An adaptive Metropolis algorithm, 
+#' in Bernoulli, Volume 7, Number 2, pages 223 through 242.
+#' 
+#' @author Michael Holton Price <MichaelHoltonPrice@@gmail.com>
 #' @export
+
 updateCov <- function(X,covObj=NA) {
 
   if(all(is.na(covObj))) {
