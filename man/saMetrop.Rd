@@ -9,7 +9,8 @@ saMetrop(costFunc, init, temp = NA, ..., control = list())
 \arguments{
 \item{costFunc}{The cost function (often a negative log-likelihood)}
 
-\item{init}{The starting point for sampling, X_0, or the output from a previous call to saMetrop}
+\item{init}{The starting point for sampling, X_0, or the output from a previous call 
+to saMetrop}
 
 \item{temp}{The temperature for sampling}
 
@@ -18,22 +19,31 @@ saMetrop(costFunc, init, temp = NA, ..., control = list())
 \item{control}{A list of control parameters. See Details.}
 }
 \value{
-A list containing the samples along with summary information
+An object of class \code{chain} that is a list containing the samples along 
+with summary information
 }
 \description{
-This function samples using the Metropolis algorithm using the adaptive Metropolis algorithm described by Harrio, Saksman, and Tamminen (2001), An adaptive Metropolis algorithm, in Bernoulli, Volume 7, Number 2, pages 223 through 242. The distribution being sampled from is determined by the input cost function and temperature.
-
-
-The first input to the cost functionn, costFunc, must be the variable to be sampled. Additional inputs to costFunc can be given as named variable inputs.
-
-The `control` argument is a list that can supply any of the following (otherwise defaults, in brackets, are be used):
-\itemize{
-  \item{`numSamp`}{Number of samples after initialization [1000]}
-  \item{`t0`}{Number of samples using initial proporsal ditribution [100]}
-  \item{`verbose`}{Whether to print out information as the run proceeds [F]}
-  \item{`fileName`}{Filename for saving}
-  \item{`savePeriod`}{Period (of samples) for saving [1000]}
+This function samples using the Metropolis algorithm using the adaptive 
+Metropolis algorithm described by Harrio, Saksman, and Tamminen (2001). The distribution 
+being sampled from is determined by the input cost function and temperature.
 }
+\details{
+The first input to the cost functionn, costFunc, must be the variable to be 
+sampled. Additional inputs to costFunc can be given as named variable inputs.
+
+The \code{control} argument is a list that can supply any of the following (otherwise 
+defaults, in brackets, are be used):
+\itemize{
+  \item{\code{numSamp}} Number of samples after initialization [1000]
+  \item{\code{t0}} Number of samples using initial proporsal ditribution [100]
+  \item{\code{verbose}} Whether to print out information as the run proceeds [F]
+  \item{\code{fileName}} Filename for saving
+  \item{\code{savePeriod}} Period (of samples) for saving [1000]
+}
+}
+\references{
+Harrio, Saksman, and Tamminen (2001), An adaptive Metropolis algorithm, 
+in Bernoulli, Volume 7, Number 2, pages 223 through 242.
 }
 \author{
 Michael Holton Price <MichaelHoltonPrice@gmail.com>

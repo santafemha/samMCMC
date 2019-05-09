@@ -1,31 +1,39 @@
 #' @title Metropolis sampling for adaptive simulated annealing algorithm
 #'
-#' @description This function samples using the Metropolis algorithm using the adaptive Metropolis algorithm described by Harrio, Saksman, and Tamminen (2001), An adaptive Metropolis algorithm, in Bernoulli, Volume 7, Number 2, pages 223 through 242. The distribution being sampled from is determined by the input cost function and temperature.
+#' @description This function samples using the Metropolis algorithm using the adaptive 
+#' Metropolis algorithm described by Harrio, Saksman, and Tamminen (2001). The distribution 
+#' being sampled from is determined by the input cost function and temperature.
 #'
-# @details
+#' @details The first input to the cost functionn, costFunc, must be the variable to be 
+#' sampled. Additional inputs to costFunc can be given as named variable inputs.
 #'
-#' The first input to the cost functionn, costFunc, must be the variable to be sampled. Additional inputs to costFunc can be given as named variable inputs.
-#'
-#' The `control` argument is a list that can supply any of the following (otherwise defaults, in brackets, are be used):
+#' The \code{control} argument is a list that can supply any of the following (otherwise 
+#' defaults, in brackets, are be used):
 #' \itemize{
-#'   \item{`numSamp`}{Number of samples after initialization [1000]}
-#'   \item{`t0`}{Number of samples using initial proporsal ditribution [100]}
-#'   \item{`verbose`}{Whether to print out information as the run proceeds [F]}
-#'   \item{`fileName`}{Filename for saving}
-#'   \item{`savePeriod`}{Period (of samples) for saving [1000]}
+#'   \item{\code{numSamp}} Number of samples after initialization [1000]
+#'   \item{\code{t0}} Number of samples using initial proporsal ditribution [100]
+#'   \item{\code{verbose}} Whether to print out information as the run proceeds [F]
+#'   \item{\code{fileName}} Filename for saving
+#'   \item{\code{savePeriod}} Period (of samples) for saving [1000]
 #' }
 #'
 #' @param costFunc The cost function (often a negative log-likelihood)
-#' @param init The starting point for sampling, X_0, or the output from a previous call to saMetrop
+#' @param init The starting point for sampling, X_0, or the output from a previous call 
+#' to saMetrop
 #' @param temp The temperature for sampling
 #' @param ... Further arguments to be passed to costFunc
 #' @param control A list of control parameters. See Details.
 #'
-#' @return A list containing the samples along with summary information
+#' @return An object of class \code{chain} that is a list containing the samples along 
+#' with summary information
 #'
-#' @author Michael Holton Price <MichaelHoltonPrice@gmail.com>
-
+#' @author Michael Holton Price <MichaelHoltonPrice@@gmail.com>
+#' 
+#' @references Harrio, Saksman, and Tamminen (2001), An adaptive Metropolis algorithm, 
+#' in Bernoulli, Volume 7, Number 2, pages 223 through 242.
+#' 
 #' @export
+
 saMetrop <- function(costFunc,init,temp=NA,...,control=list()) {
 
   # init is either a vector (X_0) or list (continuing a chain)
@@ -187,5 +195,8 @@ saMetrop <- function(costFunc,init,temp=NA,...,control=list()) {
   } else {
     returnList$firstX <- init$firstX
   }
+  
+  class(returnList) <- c('sam', 'mcmc')
+  
   return(returnList)
 }
