@@ -1,11 +1,15 @@
-#' @title Metropolis sampling for adaptive simulated annealing algorithm
+#' @title Adaptive Metropolis sampling
 #'
-#' @description This function samples using the Metropolis algorithm using the adaptive 
-#' Metropolis algorithm described by Harrio, Saksman, and Tamminen (2001). The distribution 
-#' being sampled from is determined by the input cost function and temperature.
+#' @description This function samples using the Metropolis algorithm described by
+#' Harrio, Saksman, and Tamminen (2001). \code{samMCMC} works in one of two ways:
 #'
-#' @details The first input to the cost functionn, costFunc, must be the variable to be 
-#' sampled. Additional inputs to costFunc can be given as named variable inputs.
+#' (1) [default] The function to be sampled is directly specified
+#' (2)           The negative log density of the function to be sampled is specified,
+#'               along with a temperature
+#'
+#' @details The first input to the cost functionn, sampFunc, must be a function taking
+#'  the variable to be sampled as its first input. Additional inputs to sampmFunc can be
+#'  given as named variable inputs.
 #'
 #' The \code{control} argument is a list that can supply any of the following (otherwise 
 #' defaults, in brackets, are be used):
@@ -19,7 +23,7 @@
 #'
 #' @param costFunc The cost function (often a negative log-likelihood)
 #' @param init The starting point for sampling, X_0, or the output from a previous call 
-#' to saMetrop
+#' to samMCMC
 #' @param temp The temperature for sampling
 #' @param ... Further arguments to be passed to costFunc
 #' @param control A list of control parameters. See Details.
@@ -34,7 +38,7 @@
 #' 
 #' @export
 
-saMetrop <- function(costFunc,init,temp=NA,...,control=list()) {
+samMCMC <- function(sampFunc,init,temp=NA,...,control=list()) {
 
   # init is either a vector (X_0) or list (continuing a chain)
   haveChain <- is.list(init)
