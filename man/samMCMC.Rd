@@ -4,19 +4,19 @@
 \alias{samMCMC}
 \title{Adaptive Metropolis sampling}
 \usage{
-samMCMC(sampFunc, init, temp = NA, ..., control = list())
+samMCMC(sampFunc, init, ..., control = list())
 }
 \arguments{
 \item{init}{The starting point for sampling, X_0, or the output from a previous call 
 to samMCMC}
-
-\item{temp}{The temperature for sampling}
 
 \item{...}{Further arguments to be passed to costFunc}
 
 \item{control}{A list of control parameters. See Details.}
 
 \item{costFunc}{The cost function (often a negative log-likelihood)}
+
+\item{temp}{The temperature for sampling}
 }
 \value{
 An object of class \code{chain} that is a list containing the samples along 

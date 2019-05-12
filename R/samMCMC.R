@@ -38,85 +38,90 @@
 #' 
 #' @export
 
-samMCMC <- function(sampFunc,init,temp=NA,...,control=list()) {
+samMCMC <- function(sampFunc,init,...,control=list()) {
+  # TODO: Don't burn in on continued chains. Error check / test on this, too.
 
-  # init is either a vector (X_0) or list (continuing a chain)
-  haveChain <- is.list(init)
+  # First, handle inputs. Each varible can be specified in one of three ways:
+  # the default, the value from a prevous chain, and the value in control.
+  # Preference is given to the value in control, followed by the value from a
+  # previous chain, followed by the default. That is, the value from the
+  # previous chain overwrites the default and the value from control overwrites
+  # the value from a previous chain.
+
+  # init is either a vector (X_0) or the result of a previous call to samMCMC
+  haveChain <- 'sam' %in% class(init)
+
+  # Save the input control as control0
+  control0 <- control
+  # Create a new control object
+  control <- list()
+  # Set initChain [if applicable; if not, set to NA] 
+  # [This makes subsequent code clearer]
+  if(haveChain) {
+    initChain <- init$control
+  } else {
+    initChain <- NA
+  }
+
+  # Set X_0
   if(!haveChain) {
     X_0 <- init
   } else {
     X_0 <- as.vector(init$X_mat[,ncol(init$X_mat)])
-    control0 <- control
-    control <- init$control # These will get reset if the input control is not empty
   }
 
-  # If necessary, set control defaults
-  if(is.na(temp)) {
-    if(!haveChain) {
-      stop('Cannot initialize a new chain without an input temperature')
-    }
-    temp <- init$temp
+  # Set control values by calling the "helper" function chooseValue
+  # [error handling is done below]
+  control$direct <- chooseValue('direct',T,control0,haveChain,initChain)
+  control$temp <- chooseValue('temp',NA,control0,haveChain,initChain)
+  control$numSamp <- chooseValue('numSamp',1000,control0,haveChain,initChain)
+  control$verbose <- chooseValue('verbose',F,control0,haveChain,initChain)
+
+  # Must handle the special case where X_0 is a scalar
+  if(length(X_0) == 1) {
+    control$C_0 <- chooseValue('C_0',1e-6,control0,haveChain,initChain)
+  } else { # X_0 is a vector
+    control$C_0 <- chooseValue('C_0',diag(c(rep(1e-6,length(X_0)))),control0,haveChain,initChain)
   }
 
-  if(!haveChain && !('numSamp' %in% names(control))) {
-    control$numSamp <- 1000
+  control$t0 <- chooseValue('t0',100,control0,haveChain,initChain)
+  control$s_d <- chooseValue('s_d',(2.4)^2 / length(X_0),control0,haveChain,initChain)
+  control$epsilon <- chooseValue('epsilon',1e-12,control0,haveChain,initChain)
+  control$numSampBurn <- chooseValue('numSampBurn',1000,control0,haveChain,initChain)
+  control$thinning <- chooseValue('thinning',1,control0,haveChain,initChain)
+
+  # Handle errors
+  # Error 1. Expect t0 to be less than or equal to the burn in
+  # See:
+  #     test_that("Expect error if t0 > numSampBurn")
+  #     Context: samMCMC
+  if(control$t0 > control$numSampBurn) {
+    stop(paste0('t0 [',as.character(t0),'] > numSampBurn [',as.character(numSampBurn),']'))
   }
 
-  if(haveChain && ('numSamp' %in% names(control0))) {
-    control$numSamp <- control0$numSamp
+  # Error 2. Direct must be TRUE if temp is NA
+  # See:
+  #     test_that("Expect error if temp is NA [default] and direct is FALSE")
+  #     Context: samMCMC
+  if(is.na(control$temp) && !control$direct) {
+    stop('temp is NA but direct is FALSE')
   }
 
-  if(!haveChain && !('verbose' %in% names(control))) {
-    control$verbose <- F
+  # Error 3. Direct must be TRUE if temp is NA
+  # See:
+  #     test_that("Expect error if temp is given and direct is TRUE [default]")
+  #     Context: samMCMC
+  if(!is.na(control$temp) && control$direct) {
+    stop('temp is given but direct is TRUE')
   }
-
-  if(haveChain && ('verbose' %in% names(control0))) {
-    control$verbose <- control0$verbose
-  }
-
-
-  if(!haveChain && !('C_0' %in% names(control))) {
-    if(length(X_0) == 1) {
-      control$C_0 <- 1e-6
-    } else {
-      control$C_0 <- diag(c(rep(1e-6,length(X_0))))
-    }
-  }
-
-  if(haveChain && ('C_0' %in% names(control0))) {
-    control$C_0 <- control0$C_0
-  }
-
-  if(!haveChain && !('t0' %in% names(control))) {
-    control$t0 <- 100
-  }
-
-  if(haveChain && ('t0' %in% names(control0))) {
-    control$t0 <- control0$t0
-  }
-
-  if(!haveChain && !('s_d' %in% names(control))) {
-    control$s_d <- (2.4)^2 / length(X_0)
-  }
-
-  if(haveChain && ('s_d' %in% names(control0))) {
-    control$s_d <- control0$s_d
-  }
-
-  if(!haveChain && !('epsilon' %in% names(control))) {
-    control$epsilon <- 1e-12
-  }
-
-  if(haveChain && ('epsilon' %in% names(control0))) {
-    control$epsilon <- control0$epsilon
-  }
+  # nonsense t0 / numSampBurn values given haveChain
 
   I_d <- diag(length(X_0))
-  cf <- function(X) costFunc(X,...)
+  sf <- function(X) sampFunc(X,...)
 
   # Initialize variables
   X_t <- X_0
-  cost_t <- cf(X_t)
+  sampFunc_t <- sf(X_t)
 
   if(!haveChain) {
     covObj <- updateCov(X_t)
@@ -126,10 +131,10 @@ samMCMC <- function(sampFunc,init,temp=NA,...,control=list()) {
     ttOffset <- ncol(init$X_mat)
   }
 
-  X_mat <- matrix(NA,length(X_0),control$numSamp)
-  costVect <- vector()
+  X_mat <- matrix(NA,length(X_0),control$numSamp+control$numSampBurn)
+  sampFuncVect <- vector()
   acceptVect <- vector()
-  for(tt in 1:control$numSamp) {
+  for(tt in 1:(control$numSamp+control$numSampBurn)) {
     if(tt+ttOffset <= control$t0) {    
       if(control$verbose) {
         print('-- C_0 --')
@@ -155,45 +160,48 @@ samMCMC <- function(sampFunc,init,temp=NA,...,control=list()) {
     }
     if(control$verbose) {
       print(tt+ttOffset)
-      print(temp)
+      if(!control$direct) {
+        print(control$temp)
+      }
     }
  
-    # Calculate the acceptance ratio, alpha
-    # By construction, the proposal distribution is symmetric. Hence:
-    # A = p(theta_tp1|alpha,D) / p(theta_t|alpha,D)
-    # A = p(D|theta_tp1) * p(theta_tp1|alpha) / 
-    #     p(D|theta_t) / p(theta_t|alpha) 
-    cost_tp1 <- cf(X_tp1)
-    if(!is.finite(cost_tp1)) {
+    # Calculate the acceptance ratio, alpha, accounting for direct
+    # By construction, the proposal distribution is symmetric.
+    sampFunc_tp1 <- sf(X_tp1)
+    if(!is.finite(sampFunc_tp1)) {
       accept <- F
     } else {
-      alpha <- min(1,exp(-(cost_tp1-cost_t)/temp))
+      if(control$direct) {
+        alpha <- min(1,sampFunc_tp1/sampFunc_t)
+      } else {
+        alpha <- min(1,exp(-(sampFunc_tp1-sampFunc_t)/control$temp))
+      }
       accept <- runif(1) < alpha
     }
 
     acceptVect[tt] <- accept
     if(!accept) {
       X_tp1 <- X_t
-      cost_tp1 <- cost_t
+      sampFunc_tp1 <- sampFunc_t
     }
     X_mat[,tt] <- X_tp1
-    costVect[tt] <- cost_tp1
+    sampFuncVect[tt] <- sampFunc_tp1
 
     # Get ready for next sample
     X_t <- X_tp1
-    cost_t <- cost_tp1
+    sampFunc_t <- sampFunc_tp1
     covObj <- updateCov(X_t,covObj)
     if(control$verbose) {
-      print(cost_t)
+      print(sampFunc_t)
       print(accept)
     }
   } # end main loop
   if(haveChain) {
     X_mat <- cbind(init$X_mat,X_mat)
-    costVect <- c(init$costVect,costVect)
+    sampFuncVect <- c(init$sampFuncVect,sampFuncVect)
     acceptVect <- c(init$acceptVect,acceptVect)
   }
-  returnList <- list(X_mat=X_mat,costVect=costVect,acceptVect=acceptVect,covObj=covObj,control=control,temp=temp)
+  returnList <- list(X_mat=X_mat,sampFuncVect=sampFuncVect,acceptVect=acceptVect,covObj=covObj,control=control,temp=control$temp)
   if(!haveChain) {
     returnList$firstX <- X_0
   } else {
@@ -201,6 +209,30 @@ samMCMC <- function(sampFunc,init,temp=NA,...,control=list()) {
   }
   
   class(returnList) <- c('sam', 'mcmc')
-  
   return(returnList)
+}
+
+# A "helper" function for setting defaults
+chooseValue <- function(varName,defaultVal,control0,haveChain,initChain=NA) {
+  # varName    The varible name to be set
+  # defaultVal The default value of the variable
+  # control0   The user specified control list (possibly empty)
+  # haveChain  TRUE if the chain was initialized with the result of a previous call to samMCMC and FALSE otherwise
+  # initChain  The control parameter from the previous call (NA if haveChain is FALSE)
+
+  # Each input is set in one of three ways with the following preference ordering:
+  #
+  # default < initChain < input control
+
+  outputVal <- defaultVal # (a) default
+
+  if(haveChain) {
+    outputVal <- initChain[[varName]] # (b) from the input chain
+  }
+
+  if(varName %in% names(control0)) {
+    outputVal <- control0[[varName]] # (c) from the input control
+  }
+
+  return(outputVal)
 }
