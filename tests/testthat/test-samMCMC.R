@@ -32,22 +32,48 @@ test_that("Can sample scalar", {
   expect_is(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar),"sam")
 })
 
+# Check functioning of sampsToAdd when explicitly given
+out <- samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(sampsToAdd=93))
+test_that("sampsToAdd samples are made [new chain; sampsToAdd given]", {
+  expect_equal(length(out$X_mat),93)
+})
+
+test_that("Input value is used for output control [new chain; sampsToAdd given]", {
+  expect_equal(out$control$sampsToAdd,93)
+})
+
+out <- samMCMC(normLik,out,mu=mu_scalar,Sig=Sig_scalar)
+test_that("sampsToAdd new samples are made [extended chain; sampsToAdd given]", {
+  expect_equal(length(out$X_mat),2*93)
+})
+
+test_that("Original input value is used for output control [new chain; sampsToAdd given]", {
+  expect_equal(out$control$sampsToAdd,93)
+})
+
+# Check functioning of sampsToAdd when not explicitly given
+out <- samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(numSamp=205,numSampBurn=108))
+test_that("sampsToAdd samples are made [new chain; sampsToAdd not given]", {
+  expect_equal(length(out$X_mat),205+108)
+})
+
+test_that("numSamp, not numSamp + numSampBurn, is used for output control [new chain; sampsToAdd not given]", {
+  expect_equal(out$control$sampsToAdd,205)
+})
+
 test_that("Can sample vector", {
   expect_is(samMCMC(normLik,x0_vector,mu=mu_vector,invSig=invSig_vector),"sam")
 })
 
 # Andy: Is it possible to raise particular errors and ensure that we get those particular errors here?
-test_that("Expect error if t0 > numSampBurn", {
-  expect_error(samMCMC(normLik,x0,mu=mu_scalar,Sig=Sig_scalar,contro=list(t0=100,numSampBurn=10)))
-})
-
 test_that("Expect error if temp is NA [default] and direct is FALSE", {
-  expect_error(samMCMC(normLik,x0,mu=mu_scalar,Sig=Sig_scalar,contro=list(direct=FALSE)))
+  expect_error(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(direct=FALSE)))
 })
 
 test_that("Expect error if temp is given and direct is TRUE [default]", {
-  expect_error(samMCMC(normLik,x0,mu=mu_scalar,Sig=Sig_scalar,contro=list(temp=10)))
+  expect_error(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(temp=10)))
 })
+
 
 # Check that sampling from a scalar normal distribution yields normal samples
 # Set the random number seed (from random.org between 1 and 1,000,000)
@@ -58,7 +84,7 @@ sd_samp <- sqrt(Sig_samp)
 numSamp <- 1000000
 numSampBurn <- 1000
 thinning <- 500
-out <- samMCMC(normLik,x0,mu=mu_samp,Sig=Sig_samp,control=list(numSamp=numSamp,numSampBurn=numSampBurn,thinning=thinning))
+out <- samMCMC(normLik,x0_scalar,mu=mu_samp,Sig=Sig_samp,control=list(numSamp=numSamp,numSampBurn=numSampBurn,thinning=thinning))
 xthin <- out$X_mat[seq(numSampBurn+1,numSamp+numSampBurn,by=thinning)]
 tol <- 1e-2
 

@@ -39,8 +39,6 @@
 #' @export
 
 samMCMC <- function(sampFunc,init,...,control=list()) {
-  # TODO: Don't burn in on continued chains. Error check / test on this, too.
-
   # First, handle inputs. Each varible can be specified in one of three ways:
   # the default, the value from a prevous chain, and the value in control.
   # Preference is given to the value in control, followed by the value from a
@@ -55,8 +53,7 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
   control0 <- control
   # Create a new control object
   control <- list()
-  # Set initChain [if applicable; if not, set to NA] 
-  # [This makes subsequent code clearer]
+  # Set initChain (if applicable; if not, set to NA)
   if(haveChain) {
     initChain <- init$control
   } else {
@@ -89,17 +86,36 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
   control$epsilon <- chooseValue('epsilon',1e-12,control0,haveChain,initChain)
   control$numSampBurn <- chooseValue('numSampBurn',1000,control0,haveChain,initChain)
   control$thinning <- chooseValue('thinning',1,control0,haveChain,initChain)
-
-  # Handle errors
-  # Error 1. Expect t0 to be less than or equal to the burn in
-  # See:
-  #     test_that("Expect error if t0 > numSampBurn")
-  #     Context: samMCMC
-  if(control$t0 > control$numSampBurn) {
-    stop(paste0('t0 [',as.character(t0),'] > numSampBurn [',as.character(numSampBurn),']'))
+  
+  # Determine the number of samples to make
+  # For new chains this is either explicitly given or set to
+  # numSamp + numSampBurn. However, if it is not expliclty given it is assumed
+  # that future chains should sample numSamp additional times.
+  #
+  # If this is a continued chain, ues the value stored in the chain's control
+  # variable unless it is overridden by user input. If the latter is true,
+  # replace the value of sampsToAdd in the chain.
+  if(!haveChain) {
+    if('sampsToAdd' %in% names(control0)) {
+      sampsToAdd <- control0$sampsToAdd
+      control$sampsToAdd <- control0$sampsToAdd
+    } else { # sampsToAdd not given in control
+      sampsToAdd <- control$numSamp + control$numSampBurn
+      control$sampsToAdd <- control$numSamp # Future calls with this chain should not do the burn in
+    }
+  } else { # have chain
+    if('sampsToAdd' %in% names(control0)) {
+      sampsToAdd <- control0$sampsToAdd
+      control$sampsToAdd <- control0$sampsToAdd
+    } else { # sampsToAdd not in input control
+      sampsToAdd <- initChain$sampsToAdd
+      control$sampsToAdd <- initChain$sampsToAdd
+    }
   }
 
-  # Error 2. Direct must be TRUE if temp is NA
+  # Handle errors
+  #
+  # Direct must be TRUE if temp is NA
   # See:
   #     test_that("Expect error if temp is NA [default] and direct is FALSE")
   #     Context: samMCMC
@@ -107,14 +123,13 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
     stop('temp is NA but direct is FALSE')
   }
 
-  # Error 3. Direct must be TRUE if temp is NA
+  # temp should be NA if direct is TRUE
   # See:
   #     test_that("Expect error if temp is given and direct is TRUE [default]")
   #     Context: samMCMC
   if(!is.na(control$temp) && control$direct) {
     stop('temp is given but direct is TRUE')
   }
-  # nonsense t0 / numSampBurn values given haveChain
 
   I_d <- diag(length(X_0))
   sf <- function(X) sampFunc(X,...)
@@ -131,11 +146,13 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
     ttOffset <- ncol(init$X_mat)
   }
 
-  X_mat <- matrix(NA,length(X_0),control$numSamp+control$numSampBurn)
+  X_mat <- matrix(NA,length(X_0),sampsToAdd)
   sampFuncVect <- vector()
   acceptVect <- vector()
-  for(tt in 1:(control$numSamp+control$numSampBurn)) {
-    if(tt+ttOffset <= control$t0) {    
+  #for(tt in 1:(control$numSamp+control$numSampBurn)) {
+  for(ii in 1:sampsToAdd) {
+    tt <- ttOffset + ii ## tt because t is transpose
+    if(tt <= control$t0) {    
       if(control$verbose) {
         print('-- C_0 --')
       }
@@ -145,8 +162,7 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
       } else {
         X_tp1 <- MASS::mvrnorm(1,mu=X_t,Sigma=control$C_0)
       }
-    } else {
-      # tt > t0 [accounting for offset]
+    } else { # tt > t0
       if(control$verbose) {
         print('-- C_t --')
       }
@@ -159,7 +175,7 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
       }
     }
     if(control$verbose) {
-      print(tt+ttOffset)
+      print(tt)
       if(!control$direct) {
         print(control$temp)
       }
@@ -179,13 +195,13 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
       accept <- runif(1) < alpha
     }
 
-    acceptVect[tt] <- accept
+    acceptVect[ii] <- accept
     if(!accept) {
       X_tp1 <- X_t
       sampFunc_tp1 <- sampFunc_t
     }
-    X_mat[,tt] <- X_tp1
-    sampFuncVect[tt] <- sampFunc_tp1
+    X_mat[,ii] <- X_tp1
+    sampFuncVect[ii] <- sampFunc_tp1
 
     # Get ready for next sample
     X_t <- X_tp1
