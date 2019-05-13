@@ -51,6 +51,13 @@ test_that("Original input value is used for output control [new chain; sampsToAd
   expect_equal(out$control$sampsToAdd,93)
 })
 
+out <- samMCMC(normLik,out,mu=mu_scalar,Sig=Sig_scalar,control=list(sampsToAdd=44))
+test_that("Test that changing sampsToAdd is correctly done for an existing chain", {
+  expect_equal(length(out$X_mat),2*93+44)
+  expect_equal(out$control$sampsToAdd,44)
+})
+
+
 # Check functioning of sampsToAdd when not explicitly given
 out <- samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(numSamp=205,numSampBurn=108))
 test_that("sampsToAdd samples are made [new chain; sampsToAdd not given]", {
@@ -61,8 +68,11 @@ test_that("numSamp, not numSamp + numSampBurn, is used for output control [new c
   expect_equal(out$control$sampsToAdd,205)
 })
 
+out <- samMCMC(normLik,x0_vector,mu=mu_vector,invSig=invSig_vector,control=list(numSamp=404,numSampBurn=77))
 test_that("Can sample vector", {
-  expect_is(samMCMC(normLik,x0_vector,mu=mu_vector,invSig=invSig_vector),"sam")
+  expect_equal(nrow(out$X_mat),2)
+  expect_equal(ncol(out$X_mat),404+77)
+  expect_is(out,"sam")
 })
 
 # Andy: Is it possible to raise particular errors and ensure that we get those particular errors here?
