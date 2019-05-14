@@ -49,15 +49,15 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
   # init is either a vector (X_0) or the result of a previous call to samMCMC
   haveChain <- 'sam' %in% class(init)
 
-  # Save the input control as control0
-  control0 <- control
+  # Save the input control as inputControl
+  inputControl <- control
   # Create a new control object
   control <- list()
-  # Set initChain (if applicable; if not, set to NA)
+  # Set prevControl (if applicable; if not, set to NA)
   if(haveChain) {
-    initChain <- init$control
+    prevControl <- init$control
   } else {
-    initChain <- NA
+    prevControl <- NA
   }
 
   # Set X_0
@@ -67,25 +67,25 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
     X_0 <- as.vector(init$X_mat[,ncol(init$X_mat)])
   }
 
-  # Set control values by calling the "helper" function chooseValue
+  # Set control values by calling the "helper" function chooseControlValue
   # [error handling is done below]
-  control$direct <- chooseValue('direct',T,control0,haveChain,initChain)
-  control$temp <- chooseValue('temp',NA,control0,haveChain,initChain)
-  control$numSamp <- chooseValue('numSamp',1000,control0,haveChain,initChain)
-  control$verbose <- chooseValue('verbose',F,control0,haveChain,initChain)
+  control$direct <- chooseControlValue('direct',T,inputControl,haveChain,prevControl)
+  control$temp <- chooseControlValue('temp',NA,inputControl,haveChain,prevControl)
+  control$numSamp <- chooseControlValue('numSamp',1000,inputControl,haveChain,prevControl)
+  control$verbose <- chooseControlValue('verbose',F,inputControl,haveChain,prevControl)
 
   # Must handle the special case where X_0 is a scalar
   if(length(X_0) == 1) {
-    control$C_0 <- chooseValue('C_0',1e-6,control0,haveChain,initChain)
+    control$C_0 <- chooseControlValue('C_0',1e-6,inputControl,haveChain,prevControl)
   } else { # X_0 is a vector
-    control$C_0 <- chooseValue('C_0',diag(c(rep(1e-6,length(X_0)))),control0,haveChain,initChain)
+    control$C_0 <- chooseControlValue('C_0',diag(c(rep(1e-6,length(X_0)))),inputControl,haveChain,prevControl)
   }
 
-  control$t0 <- chooseValue('t0',100,control0,haveChain,initChain)
-  control$s_d <- chooseValue('s_d',(2.4)^2 / length(X_0),control0,haveChain,initChain)
-  control$epsilon <- chooseValue('epsilon',1e-12,control0,haveChain,initChain)
-  control$numSampBurn <- chooseValue('numSampBurn',1000,control0,haveChain,initChain)
-  control$thinning <- chooseValue('thinning',1,control0,haveChain,initChain)
+  control$t0 <- chooseControlValue('t0',100,inputControl,haveChain,prevControl)
+  control$s_d <- chooseControlValue('s_d',(2.4)^2 / length(X_0),inputControl,haveChain,prevControl)
+  control$epsilon <- chooseControlValue('epsilon',1e-12,inputControl,haveChain,prevControl)
+  control$numSampBurn <- chooseControlValue('numSampBurn',1000,inputControl,haveChain,prevControl)
+  control$thinning <- chooseControlValue('thinning',1,inputControl,haveChain,prevControl)
   
   # Determine the number of samples to make
   # For new chains this is either explicitly given or set to
@@ -96,20 +96,20 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
   # variable unless it is overridden by user input. If the latter is true,
   # replace the value of sampsToAdd in the chain.
   if(!haveChain) {
-    if('sampsToAdd' %in% names(control0)) {
-      sampsToAdd <- control0$sampsToAdd
-      control$sampsToAdd <- control0$sampsToAdd
+    if('sampsToAdd' %in% names(inputControl)) {
+      sampsToAdd <- inputControl$sampsToAdd
+      control$sampsToAdd <- inputControl$sampsToAdd
     } else { # sampsToAdd not given in control
       sampsToAdd <- control$numSamp + control$numSampBurn
       control$sampsToAdd <- control$numSamp # Future calls with this chain should not do the burn in
     }
   } else { # have chain
-    if('sampsToAdd' %in% names(control0)) {
-      sampsToAdd <- control0$sampsToAdd
-      control$sampsToAdd <- control0$sampsToAdd
+    if('sampsToAdd' %in% names(inputControl)) {
+      sampsToAdd <- inputControl$sampsToAdd
+      control$sampsToAdd <- inputControl$sampsToAdd
     } else { # sampsToAdd not in input control
-      sampsToAdd <- initChain$sampsToAdd
-      control$sampsToAdd <- initChain$sampsToAdd
+      sampsToAdd <- prevControl$sampsToAdd
+      control$sampsToAdd <- prevControl$sampsToAdd
     }
   }
 
@@ -226,29 +226,4 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
   
   class(returnList) <- c('sam', 'mcmc')
   return(returnList)
-}
-
-# A "helper" function for setting defaults
-chooseValue <- function(varName,defaultVal,control0,haveChain,initChain=NA) {
-  # varName    The varible name to be set
-  # defaultVal The default value of the variable
-  # control0   The user specified control list (possibly empty)
-  # haveChain  TRUE if the chain was initialized with the result of a previous call to samMCMC and FALSE otherwise
-  # initChain  The control parameter from the previous call (NA if haveChain is FALSE)
-
-  # Each input is set in one of three ways with the following preference ordering:
-  #
-  # default < initChain < input control
-
-  outputVal <- defaultVal # (a) default
-
-  if(haveChain) {
-    outputVal <- initChain[[varName]] # (b) from the input chain
-  }
-
-  if(varName %in% names(control0)) {
-    outputVal <- control0[[varName]] # (c) from the input control
-  }
-
-  return(outputVal)
 }
