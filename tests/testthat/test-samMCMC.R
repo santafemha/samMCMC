@@ -75,13 +75,19 @@ test_that("Can sample vector", {
   expect_is(out,"sam")
 })
 
-# Andy: Is it possible to raise particular errors and ensure that we get those particular errors here?
+# test that the *correct* errors are given for the *correct* reasons
 test_that("Expect error if temp is NA [default] and direct is FALSE", {
   expect_error(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(direct=FALSE)))
+  tempNAdirectF <- try(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(direct=FALSE)), 
+                       silent = TRUE)
+  expect_true(grepl('temp is NA but direct is FALSE', tempNAdirectF))
 })
 
 test_that("Expect error if temp is given and direct is TRUE [default]", {
   expect_error(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(temp=10)))
+  tempXdirectT <- try(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(temp=10)), 
+                      silent = TRUE)
+  expect_true(grepl('temp is given but direct is TRUE', tempXdirectT))
 })
 
 
