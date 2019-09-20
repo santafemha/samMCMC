@@ -7,13 +7,14 @@
 #' (2)           The negative log density of the function to be sampled is specified,
 #'               along with a temperature
 #'
-#' @details The first input to the cost functionn, sampFunc, must be a function taking
+#' @details \code{sampFunc} must be a function taking
 #'  the variable to be sampled as its first input. Additional inputs to sampmFunc can be
 #'  given as named variable inputs.
 #'
 #' The \code{control} argument is a list that can supply any of the following (otherwise 
 #' defaults, in brackets, are be used):
 #' \itemize{
+#'   \item{\code{temp}} The temperature for sampling [NA]
 #'   \item{\code{numSamp}} Number of samples after initialization [1000]
 #'   \item{\code{t0}} Number of samples using initial proporsal ditribution [100]
 #'   \item{\code{verbose}} Whether to print out information as the run proceeds [F]
@@ -21,11 +22,10 @@
 #'   \item{\code{savePeriod}} Period (of samples) for saving [1000]
 #' }
 #'
-#' @param costFunc The cost function (often a negative log-likelihood)
+#' @param sampFunc The sampling function (a negative log-likelihood in case 2)
 #' @param init The starting point for sampling, X_0, or the output from a previous call 
 #' to samMCMC
-#' @param temp The temperature for sampling
-#' @param ... Further arguments to be passed to costFunc
+#' @param ... Further arguments to be passed to sampFunc
 #' @param control A list of control parameters. See Details.
 #'
 #' @return An object of class \code{chain} that is a list containing the samples along 
