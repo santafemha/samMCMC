@@ -149,7 +149,6 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
   X_mat <- matrix(NA,length(X_0),sampsToAdd)
   sampFuncVect <- vector()
   acceptVect <- vector()
-  #for(tt in 1:(control$numSamp+control$numSampBurn)) {
   for(ii in 1:sampsToAdd) {
     tt <- ttOffset + ii ## tt because t is transpose
     if(tt <= control$t0) {    
@@ -160,10 +159,7 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
       if(length(X_t)==1) {
         X_tp1 <- X_t +  rnorm(1,sd=sqrt(control$C_0))
       } else {
-        #X_tp1a <- MASS::mvrnorm(1,mu=X_t,Sigma=control$C_0)
         X_tp1 <- mvrnormR(1,X_t,control$C_0)
-	#print(X_tp1a)
-	#print(X_tp1)
       }
     } else { # tt > t0
       if(control$verbose) {
@@ -174,8 +170,7 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
       if(length(X_t)==1) {
         X_tp1 <- X_t +  rnorm(1,sd=sqrt(C_t))
       } else {
-        #X_tp1a <- MASS::mvrnorm(1,mu=X_t,Sigma=C_t)
-        X_tp1 <- mvrnormR(1,X_t,control$C_0)
+        X_tp1 <- mvrnormR(1,X_t,C_t)
       }
     }
     if(control$verbose) {
@@ -236,7 +231,7 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
 # Especially for large dimensions, the following code is much faster than
 # MASS::mvrnorm
 mvrnormR <- function(n, mu, sigma) {
-    ncols <- ncol(sigma)
-    mu <- rep(mu, each = n) ## not obliged to use a matrix (recycling)
-    return(as.vector(mu + matrix(rnorm(n * ncols), ncol = ncols) %*% chol(sigma)))
+  ncols <- ncol(sigma)
+  mu <- rep(mu, each = n) ## not obliged to use a matrix (recycling)
+  return(as.vector(mu + matrix(rnorm(n * ncols), ncol = ncols) %*% chol(sigma)))
 }
