@@ -16,7 +16,7 @@
 #' \itemize{
 #'   \item{\code{temp}} The temperature for sampling [NA]
 #'   \item{\code{numSamp}} Number of samples after initialization [1000]
-#'   \item{\code{t0}} Number of samples using initial proporsal ditribution [100]
+#'   \item{\code{t_0}} Number of samples using initial proporsal ditribution [100]
 #'   \item{\code{verbose}} Whether to print out information as the run proceeds [F]
 #'   \item{\code{fileName}} Filename for saving
 #'   \item{\code{savePeriod}} Period (of samples) for saving [1000]
@@ -81,7 +81,7 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
     control$C_0 <- chooseControlValue('C_0',diag(c(rep(1e-6,length(X_0)))),inputControl,haveChain,prevControl)
   }
 
-  control$t0 <- chooseControlValue('t0',100,inputControl,haveChain,prevControl)
+  control$t_0 <- chooseControlValue('t_0',100,inputControl,haveChain,prevControl)
   control$s_d <- chooseControlValue('s_d',(2.4)^2 / length(X_0),inputControl,haveChain,prevControl)
   control$epsilon <- chooseControlValue('epsilon',1e-12,inputControl,haveChain,prevControl)
   control$numSampBurn <- chooseControlValue('numSampBurn',1000,inputControl,haveChain,prevControl)
@@ -151,7 +151,7 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
   acceptVect <- vector()
   for(ii in 1:sampsToAdd) {
     tt <- ttOffset + ii ## tt because t is transpose
-    if(tt <= control$t0) {    
+    if(tt <= control$t_0) {    
       if(control$verbose) {
         print('-- C_0 --')
       }
@@ -161,7 +161,7 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
       } else {
         X_tp1 <- mvrnormR(1,X_t,control$C_0)
       }
-    } else { # tt > t0
+    } else { # tt > t_0
       if(control$verbose) {
         print('-- C_t --')
       }
