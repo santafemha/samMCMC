@@ -49,6 +49,30 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
   # init is either a vector (X_0) or the result of a previous call to samMCMC
   haveChain <- 'sam' %in% class(init)
 
+  # Check that all variables in the input control are recognized
+  # See:
+  #     test_that("Expect error if temp is NA [default] and direct is FALSE")
+  #     Context: samMCMC
+  if(length(control) > 0) {
+    allControlVar <- c("direct",
+                       "temp",
+                       "numSamp",
+                       "verbose",
+                       "C_0",
+                       "t_0",
+                       "s_d",
+                       "epsilon",
+                       "numSampBurn",
+                       "thinning",
+                       "sampsToAdd"
+                      )
+    for(controlVar in names(control)) {
+      if( !( controlVar %in% allControlVar ) ) {
+        stop(paste0(controlVar," is not a recognized control variable"))
+      }
+    }
+  }
+
   # Save the input control as inputControl
   inputControl <- control
   # Create a new control object
@@ -60,6 +84,7 @@ samMCMC <- function(sampFunc,init,...,control=list()) {
     prevControl <- NA
   }
 
+ 
   # Set X_0
   if(!haveChain) {
     X_0 <- init

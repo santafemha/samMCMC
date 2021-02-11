@@ -76,6 +76,14 @@ test_that("Can sample vector", {
 })
 
 # test that the *correct* errors are given for the *correct* reasons
+test_that("t0 is not a recognized control variable", { # the correct control variable is t_0
+  expect_error(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(t0=100)))
+  badControl <- try(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(direct=FALSE)), 
+                       silent = TRUE)
+  expect_true(grepl('temp is NA but direct is FALSE', badControl))
+})
+
+
 test_that("Expect error if temp is NA [default] and direct is FALSE", {
   expect_error(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(direct=FALSE)))
   tempNAdirectF <- try(samMCMC(normLik,x0_scalar,mu=mu_scalar,Sig=Sig_scalar,control=list(direct=FALSE)), 
