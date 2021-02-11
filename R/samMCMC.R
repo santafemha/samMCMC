@@ -12,14 +12,19 @@
 #'  given as named variable inputs.
 #'
 #' The \code{control} argument is a list that can supply any of the following (otherwise 
-#' defaults, in brackets, are be used):
+#' defaults, in brackets, are used):
 #' \itemize{
+#'   \item{\code{direct}} Is the sampling function specified directly or as a negative log with associated temperature  ["direct"]
 #'   \item{\code{temp}} The temperature for sampling [NA]
 #'   \item{\code{numSamp}} Number of samples after initialization [1000]
 #'   \item{\code{t_0}} Number of samples using initial proporsal ditribution [100]
+#'   \item{\code{C_0}} The covariance to use for sampling for t <= t_0 [diag(c(rep(1e-6,length(X_0))))]
+#'   \item{\code{s_d}} The rescaling of the sampling covariance relative to the data covariance [(2.4)^2 / length(X_0)]
+#'   \item{\code{epsilon}} The multiplier of the identity matrix that is added to the data covariance to ensure numerical stability [1e-12]
 #'   \item{\code{verbose}} Whether to print out information as the run proceeds [F]
-#'   \item{\code{fileName}} Filename for saving
-#'   \item{\code{savePeriod}} Period (of samples) for saving [1000]
+#'   \item{\code{numSampBurn}} Number of burn-in samples prior [1000]
+#'   \item{\code{thinning}} Thinning of samples to apply [1]
+#'   \item{\code{sampsToAdd}} Number of samples to add (for continuing runs) [Either given or set equal to numSamp for a new run]
 #' }
 #'
 #' @param sampFunc The sampling function (a negative log-likelihood in case 2)
